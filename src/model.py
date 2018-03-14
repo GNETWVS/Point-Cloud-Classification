@@ -5,7 +5,7 @@ from data_utils import get_filenames_and_class, generate_class_str_to_num_dict
 from data_utils import get_points_and_class
 from data_utils import remove_small_point_clouds
 from random import shuffle
-from datatime import datetime
+from datetime import datetime
 
 class Model:
     def __init__(self, args):
@@ -27,29 +27,24 @@ class Model:
 
         with tf.name_scope('point_net'):
             # Implement T-net here
-
-
             self.net = tf.layers.conv2d(inputs=self.X, filters=64, kernel_size=(1,3), padding='valid',
                                         activation=tf.nn.relu, kernel_initializer=xavier_init)
             self.net = tf.layers.conv2d(inputs=self.net, filters=64, kernel_size=(1,1), padding='valid',
                                         activation=tf.nn.relu, kernel_initializer=xavier_init)
-
             # Implement second T-net here
-
             self.net = tf.layers.conv2d(inputs=self.net, filters=64, kernel_size=(1,1), padding='valid',
                                         activation=tf.nn.relu, kernel_initializer=xavier_init)
             self.net = tf.layers.conv2d(inputs=self.net, filters=128, kernel_size=(1, 1), padding='valid',
                                         activation=tf.nn.relu, kernel_initializer=xavier_init)
             self.net = tf.layers.conv2d(inputs=self.net, filters=1024, kernel_size=(1, 1), padding='valid',
                                         activation=tf.nn.relu, kernel_initializer=xavier_init)
-
             self.net = tf.layers.max_pooling2d(self.net, pool_size=[self.args.n_points, 1],
                                                strides=(2,2), padding='valid')
-
             self.net = tf.layers.dense(self.net, 512, activation=tf.nn.relu,
                                        kernel_initializer=xavier_init)
             self.net = tf.layers.dense(self.net, 256, activation=tf.nn.relu,
                                        kernel_initializer=xavier_init)
+            self.net = tf.nn.dropout(self.net, keep_prob=self.args.keep_prob)
             self.logits = tf.layers.dense(self.net, 10, activation=None,
                                        kernel_initializer=xavier_init)
 
@@ -61,12 +56,14 @@ class Model:
             self.optimizer = tf.train.AdamOptimizer(learning_rate=self.args.learning_rate)
             self.training_op = self.optimizer.minimize(self.loss)
 
-
+        with tf.name_scope("eval"):
+            self.correct = tf.nn.in_top_k(tf.squeeze(self.logits), self.y, 1)
+            self.accuracy = tf.reduce_mean(tf.cast(self.correct, tf.float32))
 
     def train(self):
         self.sess = tf.Session()
         self.sess.run(tf.global_variables_initializer())
-        if self.args.load_checkpoint is not None:
+        if self.args.load_checkpoint:
             self.load()
 
         print('[*] Initializing training.')
@@ -79,10 +76,10 @@ class Model:
 
         for epoch in range(n_epochs):
             shuffle(self.train_list)
-            for iteration in range(len(self.train_list) // self.args.batch_size):
+            for iteration in range(len(self.train_list) // batch_size):
                 average_loss = list()
-                iter_indices_begin = iteration * self.args.batch_size
-                iter_indices_end = (iteration + 1) * self.args.batch_size
+                iter_indices_begin = iteration * batch_size
+                iter_indices_end = (iteration + 1) * batch_size
                 X_batch, y_batch = get_points_and_class(self.train_list[iter_indices_begin:iter_indices_end],
                                                         self.class_dict, self.args.n_points)
                 self.sess.run(self.training_op, feed_dict={self.X: X_batch[:,:,:,np.newaxis],
@@ -91,8 +88,19 @@ class Model:
                                                   self.y: y_batch})
                 average_loss.append(iter_loss)
             average_loss = sum(average_loss) / len(average_loss)
-            print('Epoch: ', epoch, 'Average loss: ', average_loss)
+            if average_loss < best_loss:
+                best_loss = average_loss
+                checks_without_progress = 0
+            else:
+                checks_without_progress += 1
+                if checks_without_progress > max_checks_without_progress:
+                    print("Early stopping!")
+                    self.save(epoch)
+                    break
             if epoch % 50 == 0:
+                batch_accuracy = self.sess.run(self.accuracy, feed_dict={self.X: X_batch[:,:,:,np.newaxis],
+                                                                         self.y: y_batch})
+                print('Epoch: %d\tAverage Loss: %.3f\tBatch accuracy: %.3f' % (epoch, average_loss, batch_accuracy))
                 self.save(epoch)
 
     def test(self):

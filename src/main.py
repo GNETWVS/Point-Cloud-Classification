@@ -29,24 +29,27 @@ def main(argv):
                         help='Number of points from each cloud to sample for training/testing.')
     parser.add_argument('--batch_size', type=int, default=64,
                         help='Batch size for training/testing')
-    parser.add_argument('--n_epochs', type=int, default=50,
+    parser.add_argument('--n_epochs', type=int, default=200,
                         help='Number of passes through training set.')
-    parser.add_argument('--early_stopping_max_checks', type=int, default=20,
+    parser.add_argument('--early_stopping_max_checks', type=int, default=40,
                         help='Stop early when loss does not improve for max_checks.')
 
     parser.add_argument('--learning_rate', type=float, default=0.001,
                         help='Learning rate for optimizer.')
+    parser.add_argument('--keep_prob', type=float, default=0.08,
+                        help='Keep probability for dropout. Set to 1.0 to remove dropout.')
 
     parser.add_argument('--load_checkpoint', action='store_true', default=False,
                         help='Call with *.ckpt file to load a saved model.')
     parser.add_argument('--saved_model_directory', type=str, default='../models/',
                         help='Directory for saving trained models.')
-    parser.add_argument('--model', type=str, default=None,
+    parser.add_argument('--model_name', type=str, default=None,
                         help='Name of checkpoint to load into graph.')
 
     args = parser.parse_args()
 
     os.makedirs(args.data_dir, exist_ok=True)
+    os.makedirs(args.saved_model_directory, exist_ok=True)
 
     if args.download_data:
         download_datasets(args)
