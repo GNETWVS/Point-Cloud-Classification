@@ -39,6 +39,10 @@ def main(argv):
 
     parser.add_argument('--load_checkpoint', action='store_true', default=False,
                         help='Call with *.ckpt file to load a saved model.')
+    parser.add_argument('--saved_model_directory', type=str, default='../models/',
+                        help='Directory for saving trained models.')
+    parser.add_argument('--model', type=str, default=None,
+                        help='Name of checkpoint to load into graph.')
 
     args = parser.parse_args()
 

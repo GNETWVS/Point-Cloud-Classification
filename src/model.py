@@ -5,6 +5,7 @@ from data_utils import get_filenames_and_class, generate_class_str_to_num_dict
 from data_utils import get_points_and_class
 from data_utils import remove_small_point_clouds
 from random import shuffle
+from datatime import datetime
 
 class Model:
     def __init__(self, args):
@@ -45,7 +46,6 @@ class Model:
             self.net = tf.layers.max_pooling2d(self.net, pool_size=[self.args.n_points, 1],
                                                strides=(2,2), padding='valid')
 
-            # self.net = tf.reshape(self.net, [-1])
             self.net = tf.layers.dense(self.net, 512, activation=tf.nn.relu,
                                        kernel_initializer=xavier_init)
             self.net = tf.layers.dense(self.net, 256, activation=tf.nn.relu,
@@ -61,11 +61,13 @@ class Model:
             self.optimizer = tf.train.AdamOptimizer(learning_rate=self.args.learning_rate)
             self.training_op = self.optimizer.minimize(self.loss)
 
+
+
     def train(self):
         self.sess = tf.Session()
         self.sess.run(tf.global_variables_initializer())
         if self.args.load_checkpoint is not None:
-            self.load(self.args.load_checkpoint)
+            self.load()
 
         print('[*] Initializing training.')
 
@@ -90,12 +92,20 @@ class Model:
                 average_loss.append(iter_loss)
             average_loss = sum(average_loss) / len(average_loss)
             print('Epoch: ', epoch, 'Average loss: ', average_loss)
+            if epoch % 50 == 0:
+                self.save(epoch)
 
     def test(self):
         pass
 
-    def save(self):
-        pass
+    def save(self, epoch):
+        print('[*] Saving checkpoint ....')
+        model_name = 'model_{}_epoch_{}.ckpt'.format(datetime.now().strftime("%d:%H:%M:%S"), epoch)
+        self.saver = tf.train.Saver()
+        save_path = self.saver.save(self.sess, os.path.join(self.args.saved_model_directory, model_name))
+        print('[*] Checkpoint saved in file {}'.format(save_path))
 
-    def load(self, checkpoint):
-        pass
+    def load(self):
+        print(" [*] Loading checkpoint...")
+        self.saver = tf.train.Saver()
+        self.saver.restore(self.sess, os.path.join(self.args.saved_model_directory, self.args.model_name))
