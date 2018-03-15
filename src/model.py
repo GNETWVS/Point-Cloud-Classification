@@ -1,20 +1,20 @@
 import os
 import numpy as np
 import tensorflow as tf
-from data_utils import get_filenames_and_class, generate_class_str_to_num_dict
 from data_utils import get_points_and_class
-from data_utils import remove_small_point_clouds
 from random import shuffle
 from datetime import datetime
+import pickle
 
 class Model:
     def __init__(self, args):
         self.args = args
-        self.train_list, self.test_list = get_filenames_and_class(args.Net10_data_dir)
-        self.train_list = remove_small_point_clouds(self.train_list, self.args.small_sample_threshold)
-        self.test_list = remove_small_point_clouds(self.test_list, self.args.small_sample_threshold)
-        self.class_dict = generate_class_str_to_num_dict(args.Net10_data_dir)
-        self.point_net = self.build_point_net()
+        self.data = pickle.load(open(os.path.join(args.data_dir, 'data.pickle'), "rb" ))
+        self.train_list = self.data['train_list']
+        self.eval_list = self.data['eval_list']
+        self.test_list = self.data['eval_list']
+        self.class_dict = self.data['class_dict']
+        self.build_point_net()
 
     def build_point_net(self):
         n_dims = 3
@@ -72,7 +72,7 @@ class Model:
         batch_size = self.args.batch_size
         best_loss = np.infty
         max_checks_without_progress = self.args.early_stopping_max_checks
-        checks_without_progres = 0
+        checks_without_progress = 0
 
         for epoch in range(n_epochs):
             shuffle(self.train_list)
@@ -95,12 +95,24 @@ class Model:
                 checks_without_progress += 1
                 if checks_without_progress > max_checks_without_progress:
                     print("Early stopping!")
+                    batch_accuracy = self.sess.run(self.accuracy, feed_dict={self.X: X_batch[:, :, :, np.newaxis],
+                                                                             self.y: y_batch})
+                    print('Epoch: %d\tAverage Loss: %.3f\tBatch accuracy: %.3f' % (epoch, average_loss, batch_accuracy))
                     self.save(epoch)
                     break
             if epoch % 50 == 0:
-                batch_accuracy = self.sess.run(self.accuracy, feed_dict={self.X: X_batch[:,:,:,np.newaxis],
-                                                                         self.y: y_batch})
-                print('Epoch: %d\tAverage Loss: %.3f\tBatch accuracy: %.3f' % (epoch, average_loss, batch_accuracy))
+                average_accuracy = list()
+                for iteration in range(len(self.eval_list) // batch_size):
+
+                    iter_indices_begin = iteration * batch_size
+                    iter_indices_end = (iteration + 1) * batch_size
+                    X_batch, y_batch = get_points_and_class(self.eval_list[iter_indices_begin:iter_indices_end],
+                                                            self.class_dict, self.args.n_points)
+                    eval_accuracy = self.sess.run(self.accuracy, feed_dict={self.X: X_batch[:,:,:,np.newaxis],
+                                                                            self.y: y_batch})
+                    average_accuracy.append(eval_accuracy)
+                average_accuracy = sum(average_accuracy) / len(average_accuracy)
+                print('Epoch: %d\tAverage Loss: %.3f\tBatch accuracy: %.3f' % (epoch, average_loss, average_accuracy))
                 self.save(epoch)
 
     def test(self):
@@ -114,6 +126,6 @@ class Model:
         print('[*] Checkpoint saved in file {}'.format(save_path))
 
     def load(self):
-        print(" [*] Loading checkpoint...")
+        print("[*] Loading checkpoint...")
         self.saver = tf.train.Saver()
         self.saver.restore(self.sess, os.path.join(self.args.saved_model_directory, self.args.model_name))

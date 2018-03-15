@@ -1,11 +1,8 @@
-from data_downloader import download_datasets
-from data_utils import remove_small_point_clouds
+from download_prepare_data import download_datasets, prepare_datasets
 from model import Model
 import argparse
 import sys
-import numpy as np
 import os
-import tensorflow as tf
 
 
 def main(argv):
@@ -15,11 +12,11 @@ def main(argv):
     parser.add_argument('--download_data', action='store_true', default=False,
                         help='Turn on to download data to disk.')
     parser.add_argument('--data_dir', default='../data/',
-                        help='Directory for downloading ModelNet10/40')
-    parser.add_argument('--Net10_data_dir', default='../data/ModelNet10',
+                        help='Directory for downloading ModelNet10')
+    parser.add_argument('--Net10_data_dir', default='../data/ModelNet10/',
                         help='Directory for ModelNet10')
-    parser.add_argument('--Net40_data_dir', default='../data/ModelNet40',
-                        help='Directory for ModelNet40')
+    # parser.add_argument('--Net40_data_dir', default='../data/ModelNet40',
+    #                     help='Directory for ModelNet40')
 
     parser.add_argument('--augment_training_data_with_rotations', action='store_true', default=False,
                         help='Call to apply random rotations to input points during training.')
@@ -29,9 +26,9 @@ def main(argv):
                         help='Number of points from each cloud to sample for training/testing.')
     parser.add_argument('--batch_size', type=int, default=64,
                         help='Batch size for training/testing')
-    parser.add_argument('--n_epochs', type=int, default=200,
+    parser.add_argument('--n_epochs', type=int, default=1000,
                         help='Number of passes through training set.')
-    parser.add_argument('--early_stopping_max_checks', type=int, default=40,
+    parser.add_argument('--early_stopping_max_checks', type=int, default=100,
                         help='Stop early when loss does not improve for max_checks.')
 
     parser.add_argument('--learning_rate', type=float, default=0.001,
@@ -53,9 +50,9 @@ def main(argv):
 
     if args.download_data:
         download_datasets(args)
+        prepare_datasets(args)      #### Need to remove .DS_store and readme before preparing
 
     model = Model(args)
-    print('Model built')
     model.train()
 
 
