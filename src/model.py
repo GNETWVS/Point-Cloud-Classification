@@ -12,7 +12,7 @@ class Model:
         self.data = pickle.load(open(os.path.join(args.data_dir, 'data.pickle'), "rb" ))
         self.train_list = self.data['train_list']
         self.eval_list = self.data['eval_list']
-        self.test_list = self.data['eval_list']
+        self.test_list = self.data['test_list']
         self.class_dict = self.data['class_dict']
         self.build_point_net()
 
@@ -116,7 +116,26 @@ class Model:
                 self.save(epoch)
 
     def test(self):
-        pass
+        self.sess = tf.Session()
+        self.sess.run(tf.global_variables_initializer())
+        batch_size = 20
+        average_acc = list()
+        if self.args.model_name is None:
+            print('Saved model needs to be loaded for testing.')
+        else:
+            self.load()
+
+            for iteration in range(len(self.test_list) // batch_size):
+                iter_indices_begin = iteration * batch_size
+                iter_indices_end = (iteration + 1) * batch_size
+                X_batch, y_batch = get_points_and_class(self.test_list[iter_indices_begin:iter_indices_end],
+                                                        self.class_dict, self.args.n_points)
+                iter_accuracy = self.sess.run(self.accuracy, feed_dict={self.X: X_batch[:, :, :, np.newaxis],
+                                                                        self.y: y_batch})
+                average_acc.append(iter_accuracy)
+            average_acc = sum(average_acc) / len(average_acc)
+            print('Test accuracy: %.3f' % average_acc)
+
 
     def save(self, epoch):
         print('[*] Saving checkpoint ....')

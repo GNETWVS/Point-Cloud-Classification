@@ -17,6 +17,10 @@ def main(argv):
                         help='Directory for ModelNet10')
     # parser.add_argument('--Net40_data_dir', default='../data/ModelNet40',
     #                     help='Directory for ModelNet40')
+    parser.add_argument('--train', action='store_true', default=False,
+                        help='Call to train PointNet.')
+    parser.add_argument('--test', action='store_true', default=False,
+                        help='Call to test PointNet. Must load trained network file.')
 
     parser.add_argument('--augment_training_data_with_rotations', action='store_true', default=False,
                         help='Call to apply random rotations to input points during training.')
@@ -52,9 +56,13 @@ def main(argv):
         download_datasets(args)
         prepare_datasets(args)      #### Need to remove .DS_store and readme before preparing
 
-    model = Model(args)
-    model.train()
+    if args.train:
+        model = Model(args)
+        model.train()
 
+    if args.test:
+        model = Model(args)
+        model.test()
 
 if __name__ == '__main__':
     main(sys.argv)
