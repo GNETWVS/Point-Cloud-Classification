@@ -1,10 +1,13 @@
 import os
+import pickle
+from datetime import datetime
+from random import shuffle
+
 import numpy as np
 import tensorflow as tf
+
 from data_utils import get_points_and_class
-from random import shuffle
-from datetime import datetime
-import pickle
+
 
 class Model:
     def __init__(self, args):
@@ -18,12 +21,9 @@ class Model:
 
     def build_point_net(self):
         n_dims = 3
-
         xavier_init = tf.contrib.layers.xavier_initializer_conv2d()
-
         self.X = tf.placeholder(tf.float32, shape=(None, 1024, n_dims, 1), name='X')
         self.y = tf.placeholder(tf.int32, shape=(None))
-
 
         with tf.name_scope('point_net'):
             # Implement T-net here
@@ -81,7 +81,8 @@ class Model:
                 iter_indices_begin = iteration * batch_size
                 iter_indices_end = (iteration + 1) * batch_size
                 X_batch, y_batch = get_points_and_class(self.train_list[iter_indices_begin:iter_indices_end],
-                                                        self.class_dict, self.args.n_points)
+                                                        self.class_dict, self.args.n_points,
+                                                        rotate=self.args.augment_training)
                 self.sess.run(self.training_op, feed_dict={self.X: X_batch[:,:,:,np.newaxis],
                                                       self.y: y_batch})
                 iter_loss = self.sess.run(self.loss, feed_dict={self.X: X_batch[:,:,:,np.newaxis],
@@ -135,7 +136,6 @@ class Model:
                 average_acc.append(iter_accuracy)
             average_acc = sum(average_acc) / len(average_acc)
             print('Test accuracy: %.3f' % average_acc)
-
 
     def save(self, epoch):
         print('[*] Saving checkpoint ....')
