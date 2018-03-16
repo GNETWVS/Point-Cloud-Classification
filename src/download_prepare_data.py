@@ -18,6 +18,7 @@ def download_datasets(args):
     os.remove(os.path.join(args.Net10_data_dir, '.DS_Store'))
     os.remove(os.path.join(args.Net10_data_dir, 'README.txt'))
 
+
 def unzip_files(url, destination):
     zip_resp = urlopen(url)
     temp_zip = open('/tmp/tempfile.zip', 'wb')
@@ -27,8 +28,8 @@ def unzip_files(url, destination):
     zf.extractall(path=destination)
     zf.close()
 
-def prepare_datasets(args):
 
+def prepare_datasets(args):
     data = dict()
     data['class_dict'] = generate_class_str_to_num_dict(args.Net10_data_dir)
     master_list = get_filenames_and_class(args.Net10_data_dir)
@@ -53,12 +54,14 @@ def get_filenames_and_class(data_dir):
             master_list.append({point_class: file})
     return master_list
 
+
 def generate_class_str_to_num_dict(data_dir):
     classes = sorted(os.listdir(data_dir))
     class_dict = {}
     for pt_class, i in enumerate(classes):
         class_dict[i] = pt_class
     return class_dict
+
 
 def remove_small_point_clouds(train_list, threshold):
     new_list = list()

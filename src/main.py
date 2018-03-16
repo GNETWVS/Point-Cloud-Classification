@@ -1,8 +1,9 @@
+import argparse
+import os
+import sys
+
 from download_prepare_data import download_datasets, prepare_datasets
 from model import Model
-import argparse
-import sys
-import os
 
 
 def main(argv):
@@ -15,14 +16,12 @@ def main(argv):
                         help='Directory for downloading ModelNet10')
     parser.add_argument('--Net10_data_dir', default='../data/ModelNet10/',
                         help='Directory for ModelNet10')
-    # parser.add_argument('--Net40_data_dir', default='../data/ModelNet40',
-    #                     help='Directory for ModelNet40')
     parser.add_argument('--train', action='store_true', default=False,
                         help='Call to train PointNet.')
     parser.add_argument('--test', action='store_true', default=False,
                         help='Call to test PointNet. Must load trained network file.')
 
-    parser.add_argument('--augment_training_data_with_rotations', action='store_true', default=False,
+    parser.add_argument('--augment_training', action='store_true', default=False,
                         help='Call to apply random rotations to input points during training.')
     parser.add_argument('--small_sample_threshold', type=int, default=1024,
                         help='Threshold for removing samples with low numbers of points.')
@@ -37,7 +36,7 @@ def main(argv):
 
     parser.add_argument('--learning_rate', type=float, default=0.001,
                         help='Learning rate for optimizer.')
-    parser.add_argument('--keep_prob', type=float, default=0.08,
+    parser.add_argument('--keep_prob', type=float, default=0.8,
                         help='Keep probability for dropout. Set to 1.0 to remove dropout.')
 
     parser.add_argument('--load_checkpoint', action='store_true', default=False,
@@ -54,7 +53,7 @@ def main(argv):
 
     if args.download_data:
         download_datasets(args)
-        prepare_datasets(args)      #### Need to remove .DS_store and readme before preparing
+        prepare_datasets(args)
 
     if args.train:
         model = Model(args)
