@@ -125,7 +125,6 @@ class Model:
             print('Saved model needs to be loaded for testing.')
         else:
             self.load()
-
             for iteration in range(len(self.test_list) // batch_size):
                 iter_indices_begin = iteration * batch_size
                 iter_indices_end = (iteration + 1) * batch_size
