@@ -22,31 +22,32 @@ class Model:
     def build_point_net(self):
         n_dims = 3
         xavier_init = tf.contrib.layers.xavier_initializer_conv2d()
-        self.X = tf.placeholder(tf.float32, shape=(None, 1024, n_dims, 1), name='X')
+        self.X = tf.placeholder(tf.float32, shape=(None, 1024, n_dims), name='X')
         self.y = tf.placeholder(tf.int32, shape=(None))
 
+        self.transform = tf.matmul(tf.transpose(self.X, [0,2,1]), self.X)
+        _, _, self.s = tf.svd(self.transform)
+        self.X_rotated = tf.matmul(self.X, self.s)
+        self.X_input = tf.expand_dims(self.X, -1)
+
         with tf.name_scope('point_net'):
-            # Implement T-net here
-            self.net = tf.layers.conv2d(inputs=self.X, filters=64, kernel_size=(1,3), padding='valid',
-                                        activation=tf.nn.relu, kernel_initializer=xavier_init)
+            self.net = tf.layers.conv2d(inputs=self.X_input, filters=64, kernel_size=(1,3), padding='valid',
+                                    activation=tf.nn.relu, kernel_initializer=xavier_init)
             self.net = tf.layers.conv2d(inputs=self.net, filters=64, kernel_size=(1,1), padding='valid',
-                                        activation=tf.nn.relu, kernel_initializer=xavier_init)
-            # Implement second T-net here
+                                    activation=tf.nn.relu, kernel_initializer=xavier_init)
+
             self.net = tf.layers.conv2d(inputs=self.net, filters=64, kernel_size=(1,1), padding='valid',
-                                        activation=tf.nn.relu, kernel_initializer=xavier_init)
+                                    activation=tf.nn.relu, kernel_initializer=xavier_init)
             self.net = tf.layers.conv2d(inputs=self.net, filters=128, kernel_size=(1, 1), padding='valid',
-                                        activation=tf.nn.relu, kernel_initializer=xavier_init)
+                                    activation=tf.nn.relu, kernel_initializer=xavier_init)
             self.net = tf.layers.conv2d(inputs=self.net, filters=1024, kernel_size=(1, 1), padding='valid',
-                                        activation=tf.nn.relu, kernel_initializer=xavier_init)
+                                    activation=tf.nn.relu, kernel_initializer=xavier_init)
             self.net = tf.layers.max_pooling2d(self.net, pool_size=[self.args.n_points, 1],
-                                               strides=(2,2), padding='valid')
-            self.net = tf.layers.dense(self.net, 512, activation=tf.nn.relu,
-                                       kernel_initializer=xavier_init)
-            self.net = tf.layers.dense(self.net, 256, activation=tf.nn.relu,
-                                       kernel_initializer=xavier_init)
+                                           strides=(2,2), padding='valid')
+            self.net = tf.layers.dense(self.net, 512, activation=tf.nn.relu, kernel_initializer=xavier_init)
+            self.net = tf.layers.dense(self.net, 256, activation=tf.nn.relu, kernel_initializer=xavier_init)
             self.net = tf.nn.dropout(self.net, keep_prob=self.args.keep_prob)
-            self.logits = tf.layers.dense(self.net, 10, activation=None,
-                                       kernel_initializer=xavier_init)
+            self.logits = tf.layers.dense(self.net, 10, activation=None, kernel_initializer=xavier_init)
 
         with tf.name_scope('loss'):
             self.xentropy = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=self.y, logits=self.logits)
@@ -83,9 +84,9 @@ class Model:
                 X_batch, y_batch = get_points_and_class(self.train_list[iter_indices_begin:iter_indices_end],
                                                         self.class_dict, self.args.n_points,
                                                         rotate=self.args.augment_training)
-                self.sess.run(self.training_op, feed_dict={self.X: X_batch[:,:,:,np.newaxis],
+                self.sess.run(self.training_op, feed_dict={self.X: X_batch,
                                                       self.y: y_batch})
-                iter_loss = self.sess.run(self.loss, feed_dict={self.X: X_batch[:,:,:,np.newaxis],
+                iter_loss = self.sess.run(self.loss, feed_dict={self.X: X_batch,
                                                   self.y: y_batch})
                 average_loss.append(iter_loss)
             average_loss = sum(average_loss) / len(average_loss)
@@ -96,7 +97,7 @@ class Model:
                 checks_without_progress += 1
                 if checks_without_progress > max_checks_without_progress:
                     print("Early stopping!")
-                    batch_accuracy = self.sess.run(self.accuracy, feed_dict={self.X: X_batch[:, :, :, np.newaxis],
+                    batch_accuracy = self.sess.run(self.accuracy, feed_dict={self.X: X_batch,
                                                                              self.y: y_batch})
                     print('Epoch: %d\tAverage Loss: %.3f\tBatch accuracy: %.3f' % (epoch, average_loss, batch_accuracy))
                     self.save(epoch)
@@ -109,7 +110,7 @@ class Model:
                     iter_indices_end = (iteration + 1) * batch_size
                     X_batch, y_batch = get_points_and_class(self.eval_list[iter_indices_begin:iter_indices_end],
                                                             self.class_dict, self.args.n_points)
-                    eval_accuracy = self.sess.run(self.accuracy, feed_dict={self.X: X_batch[:,:,:,np.newaxis],
+                    eval_accuracy = self.sess.run(self.accuracy, feed_dict={self.X: X_batch,
                                                                             self.y: y_batch})
                     average_accuracy.append(eval_accuracy)
                 average_accuracy = sum(average_accuracy) / len(average_accuracy)
@@ -130,7 +131,7 @@ class Model:
                 iter_indices_end = (iteration + 1) * batch_size
                 X_batch, y_batch = get_points_and_class(self.test_list[iter_indices_begin:iter_indices_end],
                                                         self.class_dict, self.args.n_points)
-                iter_accuracy = self.sess.run(self.accuracy, feed_dict={self.X: X_batch[:, :, :, np.newaxis],
+                iter_accuracy = self.sess.run(self.accuracy, feed_dict={self.X: X_batch,
                                                                         self.y: y_batch})
                 average_acc.append(iter_accuracy)
             average_acc = sum(average_acc) / len(average_acc)
