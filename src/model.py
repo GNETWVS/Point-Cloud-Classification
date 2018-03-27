@@ -24,6 +24,7 @@ class Model:
         xavier_init = tf.contrib.layers.xavier_initializer_conv2d()
         self.X = tf.placeholder(tf.float32, shape=(None, 1024, n_dims), name='X')
         self.y = tf.placeholder(tf.int32, shape=(None))
+        self.learning_rate = tf.placeholder(tf.float32)
 
         self.transform = tf.matmul(tf.transpose(self.X, [0,2,1]), self.X)
         _, _, self.s = tf.svd(self.transform)
@@ -54,7 +55,7 @@ class Model:
             self.loss = tf.reduce_mean(self.xentropy)
 
         with tf.name_scope('train'):
-            self.optimizer = tf.train.AdamOptimizer(learning_rate=self.args.learning_rate)
+            self.optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate)
             self.training_op = self.optimizer.minimize(self.loss)
 
         with tf.name_scope("eval"):
@@ -71,12 +72,15 @@ class Model:
 
         n_epochs = self.args.n_epochs
         batch_size = self.args.batch_size
+        learning_rate = self.args.learning_rate
         best_loss = np.infty
         max_checks_without_progress = self.args.early_stopping_max_checks
         checks_without_progress = 0
 
         for epoch in range(n_epochs):
             shuffle(self.train_list)
+            if (epoch + 1) % 20 == 0:
+                learning_rate /= 2
             for iteration in range(len(self.train_list) // batch_size):
                 average_loss = list()
                 iter_indices_begin = iteration * batch_size
@@ -85,7 +89,8 @@ class Model:
                                                         self.class_dict, self.args.n_points,
                                                         rotate=self.args.augment_training)
                 self.sess.run(self.training_op, feed_dict={self.X: X_batch,
-                                                      self.y: y_batch})
+                                                           self.y: y_batch,
+                                                           self.learning_rate: learning_rate})
                 iter_loss = self.sess.run(self.loss, feed_dict={self.X: X_batch,
                                                   self.y: y_batch})
                 average_loss.append(iter_loss)

@@ -31,7 +31,7 @@ def main(argv):
                         help='Batch size for training/testing')
     parser.add_argument('--n_epochs', type=int, default=1000,
                         help='Number of passes through training set.')
-    parser.add_argument('--early_stopping_max_checks', type=int, default=200,
+    parser.add_argument('--early_stopping_max_checks', type=int, default=10000,
                         help='Stop early when loss does not improve for max_checks.')
 
     parser.add_argument('--learning_rate', type=float, default=0.001,
