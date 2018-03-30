@@ -8,7 +8,7 @@ This code is based on the work by (Qi, Su, Mo, & Guibas, 2017) in their paper [P
 
 Clone the repo, and move to the main directory.
 
-`cd ~/PointNet/`
+`cd ~/PointNet/src`
 
 Install the dependencies.
 
