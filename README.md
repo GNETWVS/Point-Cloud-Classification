@@ -26,7 +26,7 @@ This will generate the data directory, download and unzip the raw datafiles, rem
 
 `--n_epochs`: Number of passes through training set.
 
-`--early_stopping_max_checks`: Stop early when loss does not improve for max_checks.
+`--early_stopping_max_checks`: Stop early when loss does not improve for max checks.
 
 `--learning_rate`: Learning rate for Adam Optimizer. This is the initial learning rate. The rate will is halved every 50 epochs.
 
