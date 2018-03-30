@@ -36,7 +36,6 @@ class Model:
                                     activation=tf.nn.relu, kernel_initializer=xavier_init)
             self.net = tf.layers.conv2d(inputs=self.net, filters=64, kernel_size=(1,1), padding='valid',
                                     activation=tf.nn.relu, kernel_initializer=xavier_init)
-
             self.net = tf.layers.conv2d(inputs=self.net, filters=64, kernel_size=(1,1), padding='valid',
                                     activation=tf.nn.relu, kernel_initializer=xavier_init)
             self.net = tf.layers.conv2d(inputs=self.net, filters=128, kernel_size=(1, 1), padding='valid',
@@ -127,7 +126,7 @@ class Model:
         self.sess.run(tf.global_variables_initializer())
         batch_size = 20
         average_acc = list()
-        if self.args.model_name is None:
+        if self.args.load_checkpoint is None:
             print('Saved model needs to be loaded for testing.')
         else:
             self.load()
@@ -152,4 +151,4 @@ class Model:
     def load(self):
         print("[*] Loading checkpoint...")
         self.saver = tf.train.Saver()
-        self.saver.restore(self.sess, os.path.join(self.args.saved_model_directory, self.args.model_name))
+        self.saver.restore(self.sess, os.path.join(self.args.saved_model_directory, self.args.load_checkpoint))

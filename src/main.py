@@ -39,12 +39,11 @@ def main(argv):
     parser.add_argument('--keep_prob', type=float, default=0.8,
                         help='Keep probability for dropout. Set to 1.0 to remove dropout.')
 
-    parser.add_argument('--load_checkpoint', action='store_true', default=False,
+    parser.add_argument('--load_checkpoint', type=str, default=None,
                         help='Call with *.ckpt file to load a saved model.')
     parser.add_argument('--saved_model_directory', type=str, default='../models/',
                         help='Directory for saving trained models.')
-    parser.add_argument('--model_name', type=str, default=None,
-                        help='Name of checkpoint to load into graph.')
+
 
     args = parser.parse_args()
 
