@@ -12,7 +12,7 @@ Install the dependencies.
 `$ pip install -r requirements.txt`
 If running for the first time run:
 `python main.py --download_data`
-This will generate the data directory, download and unzip the raw datafiles, remove small point clouds, split into train, create a data dictionary with object class as the key and point cloud filename as the value, and split the data into train, evaluation and test sets. The output is pickled, so this will only need to be performed a single time.
+This will generate the data directory, download and unzip the raw datafiles, remove small point clouds, create a data dictionary with keys:[object class], value:[object_filename], and split the data into train, evaluation and test sets. The output is pickled, so this will only need to be performed a single time.
 
 ## To Train
 
