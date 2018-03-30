@@ -17,16 +17,25 @@ This will generate the data directory, download and unzip the raw datafiles, rem
 ## To Train
 
 `python main.py --train`
+
 #### Optional settings include:
+
 `--n_points`: Number of points from each cloud to sample for training/testing. Required for mini-batch training.
+
 `--batch_size`: Batch size for training/testing
+
 `--n_epochs`: Number of passes through training set.
+
 `--early_stopping_max_checks`: Stop early when loss does not improve for max_checks.
+
 `--learning_rate`: Learning rate for Adam Optimizer. This is the initial learning rate. The rate will is halved every 50 epochs.
+
 `--keep_prob`: Keep probability for dropout. Set to 1.0 to remove dropout.
 
 ## To Test
 
 Testing requires saved model after training. 
+
 To run test:
+
 `python main.py --test --load_checkpoint <saved_model_name>.ckpt --keep_prob 1.0`
